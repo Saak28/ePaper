@@ -1,5 +1,7 @@
-#ifndef OLED28_H_
-#define OLED28_H_
+#ifndef EPAPER_H_
+#define EPAPER_H_
+
+#define PWM_DIR		"/sys/devices/ocp.3/pwm_test_P8_13.11"
 
 #define SYSFS_SPI_DIR		"/dev/spidev1.0"
 #define SPI_MAX_BUF				1024
@@ -42,15 +44,17 @@
 int main(int argc,char *argv[]);
 void InitGpio(void);
 void ReleaseGpio(void);
-int OledInit(void);
-void OledCls(unsigned char);
-int OledWriteCmd(unsigned char);
-int OledWriteData(unsigned char);
+int SetPWM(unsigned int,unsigned int,int);
+void EPaperSetPower(bool);
+int EPaperInit(void);
+void EPaperCls(unsigned char);
+int EPaperWriteCmd(unsigned char);
+int EPaperWriteData(unsigned char);
 int WriteSpi(unsigned char);
 int OpenSpiDevice(int*);
 void CloseSpiDevice(int*);
-void OledSetPixel(unsigned char,unsigned char,unsigned int);
+void EPaperSetPixel(unsigned char,unsigned char,unsigned int);
 
 char sysFsSpi[64];
 
-#endif /* OLED28_H_ */
+#endif /* EPAPER_H_ */

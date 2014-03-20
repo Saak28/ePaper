@@ -1,0 +1,157 @@
+/*
+* Copyright (C) 2012 Texas Instruments Incorporated - http://www.ti.com/
+*
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Purpose License Version 2 as
+* published by the Free Software Foundation
+*
+* by Saak Dertadian (s.dertadian@gmail.com)
+*
+* Cape ePaper from Pervasive for Beaglebone
+*
+*/
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "ti,beaglebone", "ti,beaglebone-black";
+
+	/* identification */
+	part-number = "BB-EPAPER";
+	version = "00A0";
+
+	/* state the resources this cape uses */
+	exclusive-use =
+		/* the pin header uses */
+		"P8.13",		/* pwm: ehrpwm2B */
+		"P9.12",	/* GPIO_RESET */
+		"P9.23",	/* GPIO_BUSY */
+		"P9.15",	/* GPIO_POWER */
+		"P9.14",	/* GPIO_DISCHARGE */
+		"P9.16",	/* GPIO_BORDER */
+		"P9.28",	/* SPI1_CS0 	*/
+		"P9.29",	/* SPI1_MISO   */
+		"P9.30",	/* SPI1_MOSI	*/
+		"P9.31",	/* SPI1_SCLK	*/
+		"P9.42",	/* SPI1_CS1	*/
+		/* the hardware IP uses */
+		"spi1",
+		"ehrpwm2B";
+
+	fragment@0 {
+		target = <&am33xx_pinmux>;
+		__overlay__ {
+
+			bone_epaper_lcd_pins: pinmux_epaper_lcd_pins {
+				pinctrl-single,pins = <
+					0x078 0x7F  /* P9_12  60  OUTPUT MODE7 - RESET      GPIO1_28 */
+					0x044 0x27  /* P9_23  49  OUTPUT MODE7 - BUSY       GPIO1-17 */
+					0x040 0x7F  /* P9_15  48  OUTPUT MODE7 - POWER      GPIO1_16 */
+					0x048 0x7F  /* P9_14  50  OUTPUT MODE7 - DISCHARGE  GPIO1_18 */
+					0x04C 0x7F  /* P9_16  51  OUTPUT MODE7 - BORDER     GPIO1_19 */
+
+					/* OUTPUT  GPIO(mode7) 0x07 pulldown, 0x17 pullup, 0x?f no pullup/down */
+					/* INPUT   GPIO(mode7) 0x27 pulldown, 0x37 pullup, 0x?f no pullup/down */
+				>;
+			};
+
+			pwm_P8_13: pinmux_pwm_P8_13_pins {
+				pinctrl-single,pins = <0x024  0x4>; /* P8_13 (ZCZ ball T10) | MODE 4 */
+			};
+
+			bone_epaper_spi1_pins: pinmux_epaper_spi1_pins {
+				pinctrl-single,pins = <
+				0x190 0x13	/* P9_31 = mcasp0_aclkx.spi1_sclk				 , OUTPUT_PULLUP | MODE3 */
+				0x194 0x33	/* P9_29 = mcasp0_fsx.spi1_d0					 , INPUT_PULLUP  | MODE3 */
+				0x198 0x13	/* P9_30 = mcasp0_axr0.spi1_d1					 , OUTPUT_PULLUP | MODE3 */
+				0x19c 0x13	/* P9_28 = mcasp0_ahclkr.spi1_cs0				 , OUTPUT_PULLUP | MODE3 */
+				0x164 0x12  /* P9_42 = GPIO0_7 =  eCAP0_in_PWM0_out.gpio0[7] , OUTPUT_PULLUP | MODE2 */
+				>;
+			};
+		};
+	};
+
+	fragment@1 {
+		target = <&epwmss2>;
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	fragment@2 {
+		target = <&ehrpwm2>;
+		__overlay__ {
+			status = "okay";
+		};
+	};
+
+	fragment@3 {
+		target = <&ocp>;
+		__overlay__ {
+			pwm_test_P8_13 {
+				compatible	= "pwm_test";
+				pwms 		= <&ehrpwm2 1 5000 1>;
+				pwm-names 	= "PWM_P8_13";
+
+				pinctrl-names	= "default";
+				pinctrl-0	= <&pwm_P8_13>;
+
+				enabled		= <1>;
+				duty		= <1000>;
+				status 		= "okay";
+			};
+		};
+	};
+
+	fragment@4 {
+		target = <&spi1>;
+		__overlay__ {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "okay";
+			pinctrl-names = "default";
+			pinctrl-0 = <&bone_epaper_spi1_pins>;
+			cs-gpios = <&gpio4 17 0>, <&gpio1 7 0>;
+
+			channel@0 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				compatible = "spidev";
+
+				reg = <0>;
+				spi-max-frequency = <16000000>;
+				spi-cpha;
+			};
+
+
+			channel@1 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				compatible = "spidev";
+
+				reg = <1>;
+				spi-max-frequency = <16000000>;
+			};
+
+			epaper@2 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				compatible = "saak,epaper";
+
+				pinctrl-names = "default";
+				pinctrl-0 = <&bone_epaper_lcd_pins>;
+
+				epaper-reset		= <&gpio2 28 0>;
+				epaper-busy			= <&gpio2 17 0>;
+				epaper-power		= <&gpio2 16 0>;
+				epaper-discharge	= <&gpio2 18 0>;
+				epaper-border		= <&gpio2 19 0>;
+			};
+		};
+	};
+};

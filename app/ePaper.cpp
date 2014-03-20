@@ -7,40 +7,50 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include "SimpleGPIO.h"
-#include "oled28.h"
+#include "ePaper.h"
 using namespace std;
 
-unsigned int GPIO_DC=49;
-unsigned int GPIO_RS=60;
+unsigned int GPIO_RESET=60;
+unsigned int GPIO_BUSY=49;
+unsigned int GPIO_POWER=48;
+unsigned int GPIO_DISCHARGE=50;
+unsigned int GPIO_BORDER=51;
+int spiFile;
 
 int main(int argc, char *argv[])
 {
-	cout << "Testing the Oled 2.8" << endl;
+	cout << "ePaper Display Linux Test Application..." << endl;
 
 	InitGpio();
-	OledInit();
-	OledCls(0x44);
-	OledCls(0x00);
-// 	OledCls(0xFF);
-// 	usleep(1000000);
-// 	OledWriteCmd(CMD_DISPLAY_MODE_INVERSE);	// Normal Display Mode (0x00/0x01/0x02/0x03)
-// 	OledWriteCmd(CMD_DISPLAY_MODE_ALL_ON);	// Normal Display Mode (0x00/0x01/0x02/0x03)
+	EPaperInit();
+//	EPaperCls(0x44);
+//	EPaperCls(0x00);
 	
-	OledSetPixel(0,0,0xF000);
-	OledSetPixel(252,0,0x000F);
-	OledSetPixel(0,63,0xF000);
-	OledSetPixel(252,63,0x000F);
+//	EPaperSetPixel(0,0,0xF000);
+//	EPaperSetPixel(252,0,0x000F);
+//	EPaperSetPixel(0,63,0xF000);
+//	EPaperSetPixel(252,63,0x000F);
 
-	for(int i=0;i<16;i++)
-		OledSetPixel(127,i,0x1000*i);
+//	for(int i=0;i<16;i++)
+//		EPaperSetPixel(127,i,0x1000*i);
 
-// 	OledSetPixel(4,0,0xF0F0);
-// 	OledSetPixel(4,1,0x0F0F);
-// 	OledSetPixel(0,63,0x000F);
+	SetPWM(5000,2500,0);
 
+	char buf[SPI_MAX_BUF];
+	OpenSpiDevice(&spiFile);
+	buf[0]=0x83;
+	for(int i=0;i<2000;i++)
+	{
+		write(spiFile,buf,1);
+		gpio_set_value(GPIO_RESET,LOW);
+		usleep(500);
+		gpio_set_value(GPIO_RESET,HIGH);
+		usleep(500);
+	}
+	CloseSpiDevice(&spiFile);
 
-	cout << "Init Oled 2.8 done..." << endl;
-	
+//	usleep(2000000);
+	SetPWM(5000,5000,1);
 	ReleaseGpio();
 	
 	return 0;
@@ -48,113 +58,109 @@ int main(int argc, char *argv[])
 
 void InitGpio()
 {
-	gpio_export(GPIO_DC);
-	gpio_export(GPIO_RS);
+	gpio_export(GPIO_RESET);
+	gpio_export(GPIO_BUSY);
+	gpio_export(GPIO_POWER);
+	gpio_export(GPIO_DISCHARGE);
+	gpio_export(GPIO_BORDER);
 
-	gpio_set_dir(GPIO_DC,OUTPUT_PIN);
-	gpio_set_dir(GPIO_RS,OUTPUT_PIN);
+	gpio_set_dir(GPIO_RESET,OUTPUT_PIN);
+	gpio_set_dir(GPIO_BUSY,INPUT_PIN);
+	gpio_set_dir(GPIO_POWER,OUTPUT_PIN);
+	gpio_set_dir(GPIO_DISCHARGE,OUTPUT_PIN);
+	gpio_set_dir(GPIO_BORDER,OUTPUT_PIN);
 
-	gpio_set_value(GPIO_DC,HIGH);
-	gpio_set_value(GPIO_RS,HIGH);
+	gpio_set_value(GPIO_RESET,LOW);
+	gpio_set_value(GPIO_BORDER,LOW);
+	gpio_set_value(GPIO_POWER,LOW);
+	gpio_set_value(GPIO_DISCHARGE,LOW);
 }
 
 void ReleaseGpio()
 {
-	gpio_unexport(GPIO_DC);
-	gpio_unexport(GPIO_RS);
+	gpio_unexport(GPIO_RESET);
+	gpio_unexport(GPIO_BUSY);
+	gpio_unexport(GPIO_POWER);
+	gpio_unexport(GPIO_DISCHARGE);
+	gpio_unexport(GPIO_BORDER);
 }
 
-int OledInit()
+int SetPWM(unsigned int period,unsigned int duty,int polarity)
 {
-	gpio_set_value(GPIO_RS,LOW);
-	usleep(120);
-	gpio_set_value(GPIO_RS,HIGH);
+	int fd, len;
+	char buf[MAX_BUF];
 
-	OledWriteCmd(CMD_SET_COMMAND_LOCK);
-	OledWriteData(0x12);	// Unlock Basic Commands (0x12/0x16)
-	
-	OledWriteCmd(CMD_SET_DISPLAY_OFF);	// Display Off (0x00/0x01)
-	
-	OledWriteCmd(CMD_SET_COLUMN_ADDRESS);
-	OledWriteData(0x1C);
-	OledWriteData(0x5B);
-	
-	OledWriteCmd(CMD_SET_ROW_ADDRESS);
-	OledWriteData(0x00);
-	OledWriteData(0x3F);
-	
-	OledWriteCmd(CMD_SET_DISPLAY_CLOCK);
-	OledWriteData(0x91);	// Set Clock as 80 Frames/Sec
-	
-	OledWriteCmd(CMD_SET_MULTIPLEX_RATIO);
-	OledWriteData(0x3F);	// 1/64 Duty (0x0F~0x3F)
-	
-	OledWriteCmd(CMD_SET_DISPLAY_OFFSET);
-	OledWriteData(0x00);	// Shift Mapping RAM Counter (0x00~0x3F)
-	
-	OledWriteCmd(CMD_SET_DISPLAY_START_LINE);
-	OledWriteData(0x00);	// Set Mapping RAM Display Start Line (0x00~0x7F)
-	
-	OledWriteCmd(CMD_SET_REMAP);
-	OledWriteData(0x14);	// 0x14
-	OledWriteData(0x11);	// Enable dual COM mode
-	
-	OledWriteCmd(CMD_SET_GPIO);
-	OledWriteData(0x00);	// Disable GPIO input pin
-	
-	OledWriteCmd(CMD_FUNCTION_SELECTION);
-	OledWriteData(0x01);	// Enable internal VDD regulator
+	cout << "PWM..." << period <<" " << duty <<" " << polarity <<" " << endl;
 
-	OledWriteCmd(CMD_SET_DISPLAY_ENHANCEMENT_A);
-	OledWriteData(0xA0);	// Set_Display_Enhancement_A(0xA0,0xFD);
-	OledWriteData(0xFD);
-	
-	OledWriteCmd(CMD_SET_CONTRAST_CONTROL);
-	OledWriteData(0x9F);	// Set Segment Output Current
-	
-	OledWriteCmd(CMD_MASTER_CONTRAST_CONTROL);
-	OledWriteData(0x0F);	// Set Scale Factor of Segment Output Current Control 
-	
-	OledWriteCmd(CMD_SELECT_DEFAULT);	// set default linear gray scale table
-	OledWriteCmd(CMD_ENABLE_GRAYSCALE_TABLE);
-	
-	OledWriteCmd(CMD_SET_PHASE_LENGTH);
-	OledWriteData(0xE2);	// Set Phase 1 as 5 Clocks & Phase 2 as 14 Clocks
+	fd=open(PWM_DIR "/duty",O_WRONLY);
+	if(fd<0)	return -1;
+	len=snprintf(buf,sizeof(buf),"%d",duty);
+	write(fd, buf, len);
+	close(fd);
 
-	OledWriteCmd(CMD_SET_DISPLAY_ENHANCEMENT_B);
-	OledWriteData(0x20);	// Set_Display_Enhancement_B(0x20);
+	fd=open(PWM_DIR "/period",O_WRONLY);
+	if(fd<0)	return -1;
+	len=snprintf(buf,sizeof(buf),"%d",period);
+	write(fd, buf, len);
+	close(fd);
+
+	fd=open(PWM_DIR "/polarity",O_WRONLY);
+	if(fd<0)	return -1;
+	len=snprintf(buf,sizeof(buf),"%d",polarity);
+	write(fd, buf, len);
+	close(fd);
+
+	return 0;
+}
+
+void EPaperSetPower(bool mode)
+{
+	if(mode)
+	{
+		gpio_set_value(GPIO_DISCHARGE,LOW);
+		gpio_set_value(GPIO_RESET,LOW);
+		OpenSpiDevice(&spiFile);
+		SetPWM(5000,2500,0);
+		gpio_set_value(GPIO_POWER,HIGH);
+		usleep(10000);
+		gpio_set_value(GPIO_BORDER,HIGH);
+		gpio_set_value(GPIO_RESET,HIGH);
+		usleep(5000);
+		gpio_set_value(GPIO_RESET,LOW);
+		usleep(5000);
+		gpio_set_value(GPIO_RESET,HIGH);
+	}
+	else
+	{
+
+	}
+}
+
+int EPaperInit()
+{
+	EPaperSetPower(true);	// Power on COG Driver
+	EPaperInitializeDriver(EPD_type_index);	// Initialize COG Driver
+
+//	usleep(120);
+//	gpio_set_value(GPIO_RESET,HIGH);
+
+//	EPaperWriteCmd(CMD_SET_COMMAND_LOCK);
+//	EPaperWriteData(0x12);	// Unlock Basic Commands (0x12/0x16)
 	
-	OledWriteCmd(CMD_SET_PRECHARGE_VOLTAGE);
-	OledWriteData(0x1F);	// Set Pre‐Charge Voltage Level as 0.60*VCC
-	
-	OledWriteCmd(CMD_SET_SECOND_PRECHARGE_PERIOD);
-	OledWriteData(0x08);	// Set Second Pre‐Charge Period as 8 Clocks 
-	
-	OledWriteCmd(CMD_SET_VCOMH_VOLTAGE);
-	OledWriteData(0x07);	// Set Common Pins Deselect Voltage Level as 0.86*VCC
-	
-	OledWriteCmd(CMD_DISPLAY_MODE_NORMAL);	// Normal Display Mode (0x00/0x01/0x02/0x03)
-	
-	OledWriteCmd(CMD_EXIT_PARTIAL_DISPLAY);
-// 	OledWriteCmd(CMD_ENABLE_PARTIAL_DISPLAY);
-// 	OledWriteData(0x00);	// Disable Partial Display
-// 	OledWriteData(0x3F);	// 
-	
-	OledWriteCmd(CMD_SET_DISPLAY_ON);
 
 	return 1;
 }
 
-void OledCls(unsigned char fillData)
+void EPaperCls(unsigned char fillData)
 {
-	OledWriteCmd(CMD_SET_COLUMN_ADDRESS);
-	OledWriteData(0x1C);
+	EPaperWriteCmd(CMD_SET_COLUMN_ADDRESS);
+	EPaperWriteData(0x1C);
 	
-	OledWriteCmd(CMD_SET_ROW_ADDRESS);
-	OledWriteData(0x00);
+	EPaperWriteCmd(CMD_SET_ROW_ADDRESS);
+	EPaperWriteData(0x00);
 
-	OledWriteCmd(CMD_WRITE_RAM_CMD);
-	gpio_set_value(GPIO_DC,HIGH);
+	EPaperWriteCmd(CMD_WRITE_RAM_CMD);
+	gpio_set_value(GPIO_BUSY,HIGH);
 
 	char buf[SPI_MAX_BUF];
 	int spiFile;	
@@ -168,15 +174,15 @@ void OledCls(unsigned char fillData)
 	CloseSpiDevice(&spiFile);
 }
 
-int OledWriteCmd(unsigned char cmd)
+int EPaperWriteCmd(unsigned char cmd)
 {
-	gpio_set_value(GPIO_DC,LOW);
+	gpio_set_value(GPIO_BUSY,LOW);
 	return WriteSpi(cmd);
 }
 
-int OledWriteData(unsigned char data)
+int EPaperWriteData(unsigned char data)
 {
-	gpio_set_value(GPIO_DC,HIGH);
+	gpio_set_value(GPIO_BUSY,HIGH);
 	return WriteSpi(data);
 }
 
@@ -212,15 +218,15 @@ void CloseSpiDevice(int *spiFile)
 	close(*spiFile);
 }
 
-void OledSetPixel(unsigned char x,unsigned char y,unsigned int color)
+void EPaperSetPixel(unsigned char x,unsigned char y,unsigned int color)
 {
-	OledWriteCmd(CMD_SET_COLUMN_ADDRESS);
-	OledWriteData(0x1C+(x>>2));
+	EPaperWriteCmd(CMD_SET_COLUMN_ADDRESS);
+	EPaperWriteData(0x1C+(x>>2));
 	
-	OledWriteCmd(CMD_SET_ROW_ADDRESS);
-	OledWriteData(y);
+	EPaperWriteCmd(CMD_SET_ROW_ADDRESS);
+	EPaperWriteData(y);
 	
-	OledWriteCmd(CMD_WRITE_RAM_CMD);
-	OledWriteData(color>>8);
-	OledWriteData(color);
+	EPaperWriteCmd(CMD_WRITE_RAM_CMD);
+	EPaperWriteData(color>>8);
+	EPaperWriteData(color);
 }

@@ -1,5 +1,5 @@
 #!/bin/bash
 
-echo "Building Oled28 Application"
+echo "Building ePaper Application"
 
-g++ -O2 -Wall -Wno-unused-result -Wno-unused-variable oled28.cpp SimpleGPIO.cpp -o oled28
+g++ -O2 -Wall -Wno-unused-result -Wno-unused-variable ePaper.cpp SimpleGPIO.cpp -o ePaper
