@@ -45,11 +45,13 @@
 
 			bone_epaper_lcd_pins: pinmux_epaper_lcd_pins {
 				pinctrl-single,pins = <
-					0x078 0x7F  /* P9_12  60  OUTPUT MODE7 - RESET      GPIO1_28 */
-					0x044 0x27  /* P9_23  49  OUTPUT MODE7 - BUSY       GPIO1-17 */
-					0x040 0x7F  /* P9_15  48  OUTPUT MODE7 - POWER      GPIO1_16 */
-					0x048 0x7F  /* P9_14  50  OUTPUT MODE7 - DISCHARGE  GPIO1_18 */
-					0x04C 0x7F  /* P9_16  51  OUTPUT MODE7 - BORDER     GPIO1_19 */
+					0x078 0x7F  /* P9_12  60   OUTPUT MODE7 - RESET      GPIO1_28 */
+					0x044 0x27  /* P9_23  49   OUTPUT MODE7 - BUSY       GPIO1-17 */
+					0x040 0x7F  /* P9_15  48   OUTPUT MODE7 - POWER      GPIO1_16 */
+					0x048 0x7F  /* P9_14  50   OUTPUT MODE7 - DISCHARGE  GPIO1_18 */
+					0x04C 0x7F  /* P9_16  51   OUTPUT MODE7 - BORDER     GPIO1_19 */
+					0x19C 0x7F  /* P9_28  113  OUTPUT MODE7 - FLASH_CS   GPIO3_17 */
+					0x164 0x7F  /* P9_42A 7    OUTPUT MODE7 - EPD_CS     GPIO0_7  */
 
 					/* OUTPUT  GPIO(mode7) 0x07 pulldown, 0x17 pullup, 0x?f no pullup/down */
 					/* INPUT   GPIO(mode7) 0x27 pulldown, 0x37 pullup, 0x?f no pullup/down */
@@ -62,11 +64,11 @@
 
 			bone_epaper_spi1_pins: pinmux_epaper_spi1_pins {
 				pinctrl-single,pins = <
-				0x190 0x13	/* P9_31 = mcasp0_aclkx.spi1_sclk				 , OUTPUT_PULLUP | MODE3 */
+				0x190 0x33	/* P9_31 = mcasp0_aclkx.spi1_sclk				 , OUTPUT_PULLUP | MODE3 */
 				0x194 0x33	/* P9_29 = mcasp0_fsx.spi1_d0					 , INPUT_PULLUP  | MODE3 */
 				0x198 0x13	/* P9_30 = mcasp0_axr0.spi1_d1					 , OUTPUT_PULLUP | MODE3 */
-				0x19c 0x13	/* P9_28 = mcasp0_ahclkr.spi1_cs0				 , OUTPUT_PULLUP | MODE3 */
-				0x164 0x12  /* P9_42 = GPIO0_7 =  eCAP0_in_PWM0_out.gpio0[7] , OUTPUT_PULLUP | MODE2 */
+				// 0x19c 0x13	/* P9_28 = mcasp0_ahclkr.spi1_cs0				 , OUTPUT_PULLUP | MODE3 */
+				// 0x164 0x12  /* P9_42 = GPIO0_7 =  eCAP0_in_PWM0_out.gpio0[7] , OUTPUT_PULLUP | MODE2 */
 				>;
 			};
 		};
@@ -114,6 +116,8 @@
 			pinctrl-names = "default";
 			pinctrl-0 = <&bone_epaper_spi1_pins>;
 			cs-gpios = <&gpio4 17 0>, <&gpio1 7 0>;
+			epaper_flash_cs		= <&gpio4 17 0>;
+			epaper_epd_cs		= <&gpio1 7 0>;
 
 			channel@0 {
 				#address-cells = <1>;
@@ -123,7 +127,7 @@
 
 				reg = <0>;
 				spi-max-frequency = <16000000>;
-				spi-cpha;
+				// spi-cpha;
 			};
 
 
@@ -146,11 +150,11 @@
 				pinctrl-names = "default";
 				pinctrl-0 = <&bone_epaper_lcd_pins>;
 
-				epaper-reset		= <&gpio2 28 0>;
-				epaper-busy			= <&gpio2 17 0>;
-				epaper-power		= <&gpio2 16 0>;
-				epaper-discharge	= <&gpio2 18 0>;
-				epaper-border		= <&gpio2 19 0>;
+				epaper_reset		= <&gpio2 28 0>;
+				epaper_busy			= <&gpio2 17 0>;
+				epaper_power		= <&gpio2 16 0>;
+				epaper_discharge	= <&gpio2 18 0>;
+				epaper+border		= <&gpio2 19 0>;
 			};
 		};
 	};

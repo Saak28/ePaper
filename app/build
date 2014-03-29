@@ -2,4 +2,4 @@
 
 echo "Building ePaper Application"
 
-g++ -O2 -Wall -Wno-unused-result -Wno-unused-variable ePaper.cpp SimpleGPIO.cpp -o ePaper
+g++ -O2 -Wall -Wno-unused-result -Wno-unused-variable ePaper.cpp SimpleGPIO.cpp SpiRAM.cpp epd.cpp -o ePaper

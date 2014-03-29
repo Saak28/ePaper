@@ -3,8 +3,20 @@
 
 #define PWM_DIR		"/sys/devices/ocp.3/pwm_test_P8_13.11"
 
-#define SYSFS_SPI_DIR		"/dev/spidev1.0"
+//#define SYSFS_SPI_DIR		"/dev/spidev1.0"
 #define SPI_MAX_BUF				1024
+
+typedef signed int          INT;
+typedef signed char         INT8;
+typedef signed short int    INT16;
+typedef signed long int     INT32;
+typedef signed long long    INT64;
+
+typedef unsigned int        UINT;
+typedef unsigned char       UINT8;
+typedef unsigned short int  UINT16;
+typedef unsigned long int   UINT32;  // other name for 32-bit integer
+typedef unsigned long long  UINT64;
 
 ///////////////////////////////////////////////////////
 // SSD1322 COMMANDS
@@ -45,16 +57,5 @@ int main(int argc,char *argv[]);
 void InitGpio(void);
 void ReleaseGpio(void);
 int SetPWM(unsigned int,unsigned int,int);
-void EPaperSetPower(bool);
-int EPaperInit(void);
-void EPaperCls(unsigned char);
-int EPaperWriteCmd(unsigned char);
-int EPaperWriteData(unsigned char);
-int WriteSpi(unsigned char);
-int OpenSpiDevice(int*);
-void CloseSpiDevice(int*);
-void EPaperSetPixel(unsigned char,unsigned char,unsigned int);
-
-char sysFsSpi[64];
 
 #endif /* EPAPER_H_ */
