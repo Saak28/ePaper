@@ -19,6 +19,7 @@ int spiRamFile;
 void SpiRAM_Init()
 {
 	OpenSpiRAM(&spiRamFile);
+	gpio_set_value(GPIO_FLASH_CS,HIGH);
 }
 
 int OpenSpiRAM(int *spiFile)
@@ -177,7 +178,7 @@ void TestSpiRAM()
 
 	cout << "TestRamSPI..." << endl;
 
-	SpiRAMFillPage(0x0000,0x8000,0xFF);
+	SpiRAMFillPage(0x0000,SPI_RAM_SIZE,0xFF);
 	usleep(10000);
 	ShowMem(0x0000,1024);
 	cout << endl;

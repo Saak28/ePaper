@@ -3,6 +3,7 @@
 
 #define SYSFS_SPI_RAM_DIR		"/dev/spidev1.0"
 #define SPI_MAX_BUF				1024
+#define SPI_RAM_SIZE			0x8000
 
 #define SRAMRead        0x03     //Read Command for SRAM
 #define SRAMWrite       0x02     //Write Command for SRAM
@@ -28,7 +29,7 @@ UINT8	SpiRAMWritePage(unsigned int address, unsigned char *WriteData);
 UINT8	SpiRAMReadPage(unsigned int address,unsigned char *ReadData);
 UINT8	SpiRAMWriteSeq(unsigned int address, unsigned char *WriteData,unsigned int WriteCnt);
 UINT8	SpiRAMReadSeq(unsigned int address,unsigned char *ReadData,unsigned int ReadCnt);
-void	SpiRAMFill(UINT16 address,UINT16 len,UINT8 data);
+void	SpiRAMFillPage(UINT16 address,UINT16 len,UINT8 data);
 void	TestSpiRAM(void);
 void	ShowMem(UINT16 address,int len);
 

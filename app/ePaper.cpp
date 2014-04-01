@@ -17,36 +17,60 @@ int main(int argc, char *argv[])
 	cout << "ePaper Display Linux Test Application..." << endl;
 
 	InitGpio();
-	EPaperInit();
-//	EPaperCls(0x44);
-//	EPaperCls(0x00);
-	
-//	EPaperSetPixel(0,0,0xF000);
-//	EPaperSetPixel(252,0,0x000F);
-//	EPaperSetPixel(0,63,0xF000);
-//	EPaperSetPixel(252,63,0x000F);
+	EpdInit();
 
-//	for(int i=0;i<16;i++)
-//		EPaperSetPixel(127,i,0x1000*i);
+	EpdSetPower(true);						// Power on COG Driver
+	SpiRAMFillPage(0x0000,SPI_RAM_SIZE,0xFF);
+	SpiRAMWriteByte(0x0000,0xAA);
+	ShowMem(0x0000,1024);
+	EpdInitializeDriver(EPD_270);
+	EpdGlobalUpdate();
+//	EpdTest();
 
-//	SetPWM(5000,2500,0);
+	SpiRAMFillPage(new_image_address,epd_image_size/2,0xFE);
+	EpdPartialUpdate();
+	int k=0x80;
+	for(int i=0;i<8;i++)
+	{
+		SpiRAMFillPage(new_image_address+2*(epd_image_size/8),epd_image_size/8,~k);
+		k>>=1;
+		EpdPartialUpdate();
+	}
+//	EpdGlobalUpdate();
 
-//	char buf[SPI_MAX_BUF];
-//	OpenSpiDevice(&spiFile);
-//	buf[0]=0x83;
-//	for(int i=0;i<2000;i++)
+//	TestSpiRAM();
+
+//	int k,data;
+//	for(int i=0;i<128;i++)
 //	{
-//		write(spiFile,buf,1);
-//		gpio_set_value(GPIO_RESET,LOW);
-//		usleep(500);
-//		gpio_set_value(GPIO_RESET,HIGH);
-//		usleep(500);
+//		k=0x80;
+//		data=0;
+//		for(int j=0;j<8;j++)
+//		{
+//			data|=k;
+//			k>>=1;
+//			SpiRAMWriteByte(new_image_address+i,~data);
+//			EpdPartialUpdate();
+//		}
 //	}
-//	CloseSpiDevice(&spiFile);
+//	usleep(1000000);
+//	SpiRAMWriteByte(new_image_address,0x55);
+//	EpdPartialUpdate();
 
-	EPaperInit();
-	TestSpiRAM();
-//	usleep(2000000);
+//	usleep(1000000);
+//	SpiRAMWriteByte(new_image_address,0xAA);
+//	EpdPartialUpdate();
+
+//	usleep(1000000);
+//	SpiRAMWriteByte(new_image_address,0x81);
+//	EpdPartialUpdate();
+
+//	usleep(1000000);
+//	SpiRAMWriteByte(new_image_address,0xC3);
+//	EpdPartialUpdate();
+
+	EpdSetPower(false);
+	cout << "Done..." << endl;
 	SetPWM(5000,5000,1);
 	ReleaseGpio();
 	
